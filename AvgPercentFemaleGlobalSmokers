@@ -1,0 +1,77 @@
+import pandas as pd
+import geopandas as gpd
+import matplotlib.pyplot as plt
+
+# Load the smoking dataset
+smoking_data = pd.read_csv("smoking.csv")
+
+# Fix only the unmatched country names you specified
+country_fixes = {
+    "United States": "United States of America",
+    "Cape Verde": "Cabo Verde",
+    "Cote d'Ivoire": "Côte d'Ivoire",
+    "Czech Republic": "Czechia",
+    "Swaziland": "Eswatini",
+    "Macedonia": "North Macedonia",
+    "Democratic Republic of Congo": "Democratic Republic of the Congo",
+    "Timor": "Timor-Leste",
+    "Sao Tome and Principe": "São Tomé and Príncipe",
+    "Antigua and Barbuda": "Antigua and Barb.",
+    "Bosnia and Herzegovina": "Bosnia and Herz.",
+    "Central African Republic": "Central African Rep.",
+    "Dominican Republic": "Dominican Rep.",
+    "Equatorial Guinea": "Eq. Guinea",
+    "Solomon Islands": "Solomon Is.",
+    "Saint Lucia": "St. Lucia",
+    "Saint Vincent and the Grenadines": "St. Vin. and Gren.",
+    "Micronesia": "Micronesia (Fed. States)",
+    "Seychelles": "Seychelles",
+    "Bahrain": "Bahrain",
+    "Barbados": "Barbados",
+    "Comoros": "Comoros",
+    "Grenada": "Grenada",
+    "Kiribati": "Kiribati",
+    "Maldives": "Maldives",
+    "Malta": "Malta",
+    "Marshall Islands": "Marshall Is.",
+    "Mauritius": "Mauritius",
+    "Samoa": "Samoa",
+    "Singapore": "Singapore",
+    "Tonga": "Tonga",
+    "World": None  # Drop this from analysis entirely
+}
+
+# Apply the fixes (drop 'World' row)
+smoking_data = smoking_data[smoking_data["Country"] != "World"]
+smoking_data["Country"] = smoking_data["Country"].replace(country_fixes)
+
+# Compute average male smoking prevalence
+average_male = smoking_data.groupby("Country", as_index=False)["Data.Percentage.Female"].mean()
+
+# Load world shapefile
+world = gpd.read_file("ne_110m_admin_0_countries.shp")
+world["geometry"] = world["geometry"].simplify(0.01)
+
+# Merge with the map
+merged = world.merge(average_male, how="left", left_on="NAME", right_on="Country")
+
+# Plot
+fig, ax = plt.subplots(figsize=(15, 10))
+merged.plot(
+    column="Data.Percentage.Female",
+    cmap="OrRd",
+    linewidth=0.8,
+    edgecolor="0.8",
+    ax=ax,
+    legend=True,
+    missing_kwds={
+        "color": "lightgrey",
+        "edgecolor": "white",
+        "hatch": "///",
+        "label": "No data"
+    }
+)
+ax.set_title("Average Percentage of Female Smokers by Country", fontsize=16)
+ax.axis("off")
+plt.tight_layout()
+plt.show()

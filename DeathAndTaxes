@@ -1,0 +1,51 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Load dataset
+smoking_data = pd.read_csv("smoking_data.csv")  # make sure the file is in your working directory
+
+# Filter rows with both smoking-related deaths and tax rate
+avg_overlay = smoking_data.dropna(subset=["Smoking-Related Deaths", "Tobacco Tax Rate (%)"])
+
+# Group by country and compute averages
+avg_overlay = avg_overlay.groupby("Country", as_index=False).agg({
+    "Smoking-Related Deaths": "mean",
+    "Tobacco Tax Rate (%)": "mean"
+})
+
+# Get top 15 countries by average smoking-related deaths
+top_avg_overlay = avg_overlay.sort_values(by="Smoking-Related Deaths", ascending=False).head(15)
+
+# Plot setup
+fig, ax1 = plt.subplots(figsize=(12, 8))
+
+# Bar chart for average deaths
+sns.barplot(
+    data=top_avg_overlay,
+    x="Smoking-Related Deaths",
+    y="Country",
+    palette="Reds_r",
+    ax=ax1
+)
+ax1.set_xlabel("Average Smoking-Related Deaths")
+ax1.set_ylabel("Country")
+ax1.set_title("Top 15 Countries by Avg Smoking-Related Deaths with Avg Tobacco Tax Rate Overlay")
+
+# Overlay average tobacco tax rate on secondary X-axis
+ax2 = ax1.twiny()
+ax2.plot(
+    top_avg_overlay["Tobacco Tax Rate (%)"],
+    top_avg_overlay["Country"],
+    'o-',
+    color='black',
+    label="Avg Tobacco Tax Rate (%)"
+)
+ax2.set_xlabel("Avg Tobacco Tax Rate (%)")
+ax2.tick_params(axis='x', colors='black')
+
+# Add legend
+ax2.legend(loc="lower right")
+
+plt.tight_layout()
+plt.show()
